@@ -9,13 +9,23 @@ interface Props {
   queue: string[];
   /** Picks remaining until this viewer is next on the clock, or null if not applicable (spectator, already on the clock, etc). */
   picksUntilMyTurn: number | null;
+  currentOverallPick: number;
   onDraft: (playerId: string) => void;
   onToggleQueue: (playerId: string) => void;
 }
 
 const TABS: ('ALL' | Position)[] = ['ALL', 'QB', 'RB', 'WR', 'TE', 'DST', 'K'];
 
-export default function PlayerPool({ players, canDraft, busyPlayerId, queue, picksUntilMyTurn, onDraft, onToggleQueue }: Props) {
+export default function PlayerPool({
+  players,
+  canDraft,
+  busyPlayerId,
+  queue,
+  picksUntilMyTurn,
+  currentOverallPick,
+  onDraft,
+  onToggleQueue,
+}: Props) {
   const [tab, setTab] = useState<'ALL' | Position>('ALL');
   const [search, setSearch] = useState('');
 
@@ -39,6 +49,9 @@ export default function PlayerPool({ players, canDraft, busyPlayerId, queue, pic
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b border-white/5 p-3">
+        <div className="flex shrink-0 items-center gap-1.5 rounded-md border border-accent-500/30 bg-accent-500/10 px-2.5 py-1.5 text-xs font-semibold text-accent-300">
+          <span className="text-accent-400/70">Now on the clock:</span> Pick {currentOverallPick}
+        </div>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}

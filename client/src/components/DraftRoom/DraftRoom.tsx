@@ -79,14 +79,21 @@ export default function DraftRoom({ room, myTeamId, players, onPick, onSetQueue 
           <Link to="/" className="text-xs text-slate-500 hover:text-slate-300">
             ← Home
           </Link>
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-slate-500">
-              Room {room.code} &middot; Round {loc?.round ?? '—'} of{' '}
-              {Math.ceil(room.totalPicks / room.settings.teamCount)} &middot; Pick {room.currentOverallPick}/{room.totalPicks}
-            </p>
-            <p className="font-display text-sm font-semibold text-white">
-              {isMyTurn ? "You're on the clock!" : `${onClockTeam?.name ?? '—'} is picking`}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg border border-accent-500/30 bg-accent-500/10 px-3 py-1 text-center leading-tight">
+              <div className="font-display text-2xl font-bold tabular-nums text-accent-300">{room.currentOverallPick}</div>
+              <div className="text-[9px] font-semibold uppercase tracking-wide text-accent-400/70">
+                of {room.totalPicks}
+              </div>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                Room {room.code} &middot; Round {loc?.round ?? '—'} of {Math.ceil(room.totalPicks / room.settings.teamCount)}
+              </p>
+              <p className="font-display text-sm font-semibold text-white">
+                {isMyTurn ? "You're on the clock!" : `${onClockTeam?.name ?? '—'} is picking`}
+              </p>
+            </div>
           </div>
         </div>
         <PickTimer deadline={room.pickDeadline} totalSeconds={room.settings.pickTimeSeconds} label={onClockTeam?.name ?? ''} />
@@ -102,6 +109,7 @@ export default function DraftRoom({ room, myTeamId, players, onPick, onSetQueue 
             busyPlayerId={busyPlayerId}
             queue={queue}
             picksUntilMyTurn={picksUntilMyTurn}
+            currentOverallPick={room.currentOverallPick}
             onDraft={draft}
             onToggleQueue={toggleQueue}
           />

@@ -10,6 +10,16 @@ export function allPickLocations(room: RoomState) {
   return out;
 }
 
+/** The next overall pick number (>= currentOverallPick) that belongs to teamId, or null if none remain. */
+export function nextPickOverallForTeam(room: RoomState, teamId: string): number | null {
+  if (room.status !== 'drafting') return null;
+  for (let overallPick = room.currentOverallPick; overallPick <= room.totalPicks; overallPick++) {
+    const loc = locateOverallPick(overallPick, room.draftOrderTeamIds, room.settings.draftType, room.settings.thirdRoundReversal);
+    if (loc.teamId === teamId) return overallPick;
+  }
+  return null;
+}
+
 export function currentLocation(room: RoomState) {
   if (room.status !== 'drafting') return null;
   return locateOverallPick(room.currentOverallPick, room.draftOrderTeamIds, room.settings.draftType, room.settings.thirdRoundReversal);

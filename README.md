@@ -30,10 +30,13 @@ To point the client at a different server (e.g. a deployed backend), set `VITE_S
 
 ## Refreshing the ADP dataset
 
-`shared/data/adp.csv` is the single source of truth for player pool + ADP rank, loaded at server startup. Columns: `rank,name,team,position,bye`. To refresh for a new season, replace the file with an updated ADP export in the same format — no code changes needed. `posRank` (rank within position) is derived automatically from row order.
+`shared/data/adp.csv` is the single source of truth for player pool + ADP rank, loaded at server startup. Columns: `rank,name,team,position,bye`. To refresh, replace or edit the file with an updated ADP export in the same format — no code changes needed. `rank` doesn't need to be contiguous or file-ordered (decimals like `25.5` are fine for inserting a player between two existing ranks); `posRank` (rank within position) is derived automatically from `adpRank` order, not row order, so edits can go anywhere in the file.
+
+**Data provenance / known staleness:** this file is *not* a live ESPN feed. It started as a hand-built approximation from the model's training data (cutoff January 2026), which is meaningfully wrong for an August 2026 draft in specific ways: it originally missed the entire 2026 rookie class and several offseason trades. A pass on 2026-08-16 used web search (snippets only — this environment can't fetch full pages) to patch the highest-impact gaps: added rookies Jeremiyah Love (RB, ARI), Jacoby Brissett (QB, ARI), Carnell Tate (WR, TEN), KC Concepcion (WR, CLE), Jadarian Price (RB, SEA), Kenyon Sadiq (TE, NYJ); corrected teams for A.J. Brown (→ NE), Jaylen Waddle (→ DEN), Mike Evans (→ SF), Kyler Murray (→ MIN), David Montgomery (→ HOU), and Isiah Pacheco (→ DET). This is still a best-effort patch, not a verified feed — before a real draft, swap in an actual ADP export (ESPN, FantasyPros, Sleeper, etc.) if accuracy matters to you. The CSV format above is designed to make that a drop-in replacement.
 
 ## Notes / current limitations
 
 - Room state is in-memory per server process — restarting the server drops in-progress rooms. Fine for a single-instance deployment; would need shared state (e.g. Redis) to scale horizontally.
 - No accounts — a seat is secured by a token stored in the browser's `localStorage`, which is what lets you refresh mid-draft without losing your spot.
 - Spectating a room that's already drafting (without having claimed a seat before it started) shows a "already started" notice rather than a full read-only view.
+- The ADP dataset is a best-effort approximation, not a verified live feed — see "Data provenance" above.

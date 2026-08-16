@@ -207,6 +207,36 @@ export class DraftEngine {
     return room;
   }
 
+  switchSlot(code: string, teamId: string, authToken: string, targetTeamId: string) {
+    const room = this.requireRoom(code);
+    this.requireAuth(room, teamId, authToken);
+    if (room.status !== 'lobby') throw new EngineError('Cannot change slots after the draft starts');
+    if (targetTeamId === teamId) throw new EngineError('You are already in that slot');
+
+    const current = room.teams.find((t) => t.id === teamId);
+    const target = room.teams.find((t) => t.id === targetTeamId);
+    if (!current) throw new EngineError('Team not found');
+    // First come, first served: only an open (bot) slot can be claimed.
+    if (!target || !target.isBot) throw new EngineError('That slot is already taken');
+
+    const newAuthToken = generateId();
+    target.isBot = false;
+    target.name = current.name;
+    target.ready = false;
+
+    current.isBot = true;
+    current.name = `Team ${current.slotIndex + 1}`;
+    current.ready = true;
+
+    room.authTokens.delete(teamId);
+    room.authTokens.set(targetTeamId, newAuthToken);
+    if (room.hostTeamId === teamId) room.hostTeamId = targetTeamId;
+
+    this.touch(room);
+    this.broadcast(room);
+    return { room, teamId: targetTeamId, authToken: newAuthToken };
+  }
+
   setQueue(code: string, teamId: string, authToken: string, playerIds: string[]) {
     const room = this.requireRoom(code);
     this.requireAuth(room, teamId, authToken);
@@ -221,12 +251,9 @@ export class DraftEngine {
     if (!skipHostCheck && teamId !== room.hostTeamId) throw new EngineError('Only the host can start the draft');
     if (room.status !== 'lobby') throw new EngineError('Draft already started');
 
-    const order = [...room.draftOrderTeamIds];
-    for (let i = order.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [order[i], order[j]] = [order[j], order[i]];
-    }
-    room.draftOrderTeamIds = order;
+    // draftOrderTeamIds already tracks slot order (see makeTeams / updateSettings) —
+    // slot position IS draft position, so whoever claimed slot #4 in the lobby
+    // picks 4th overall. No shuffling here.
     room.status = 'drafting';
     room.currentOverallPick = 1;
     room.picks = [];

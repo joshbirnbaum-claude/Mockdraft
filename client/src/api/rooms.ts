@@ -28,6 +28,9 @@ export const RoomApi = {
   rename: (code: string, teamId: string, authToken: string, name: string) =>
     call<{ room: RoomState }>('room:rename', { code, teamId, authToken, name }),
 
+  switchSlot: (code: string, teamId: string, authToken: string, targetTeamId: string) =>
+    call<SeatResult>('room:switchSlot', { code, teamId, authToken, targetTeamId }),
+
   start: (code: string, teamId: string, authToken: string) =>
     call<{ room: RoomState }>('room:start', { code, teamId, authToken }),
 

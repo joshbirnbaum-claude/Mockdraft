@@ -8,7 +8,9 @@ import ResultsPage from './ResultsPage';
 
 export default function RoomPage() {
   const { code = '' } = useParams();
-  const { room, seat, phase, results, join, updateSettings, setReady, rename, start, pick, setQueue } = useRoom(code.toUpperCase());
+  const { room, seat, phase, results, join, switchSlot, updateSettings, setReady, rename, start, pick, setQueue } = useRoom(
+    code.toUpperCase(),
+  );
   const { players, loading: playersLoading } = usePlayers();
 
   if (phase === 'loading' || (room && playersLoading)) {
@@ -40,7 +42,15 @@ export default function RoomPage() {
 
   if (room.status === 'lobby') {
     return (
-      <Lobby room={room} myTeamId={seat!.teamId} onReady={setReady} onRename={rename} onSettings={updateSettings} onStart={start} />
+      <Lobby
+        room={room}
+        myTeamId={seat!.teamId}
+        onReady={setReady}
+        onRename={rename}
+        onSwitchSlot={switchSlot}
+        onSettings={updateSettings}
+        onStart={start}
+      />
     );
   }
 

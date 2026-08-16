@@ -7,11 +7,12 @@ interface Props {
   myTeamId: string;
   onReady: (ready: boolean) => Promise<unknown>;
   onRename: (name: string) => Promise<unknown>;
+  onSwitchSlot: (targetTeamId: string) => Promise<unknown>;
   onSettings: (settings: Partial<DraftSettings>) => Promise<unknown>;
   onStart: () => Promise<unknown>;
 }
 
-export default function Lobby({ room, myTeamId, onReady, onRename, onSettings, onStart }: Props) {
+export default function Lobby({ room, myTeamId, onReady, onRename, onSwitchSlot, onSettings, onStart }: Props) {
   const [copied, setCopied] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
   const [editingName, setEditingName] = useState(false);
@@ -60,9 +61,12 @@ export default function Lobby({ room, myTeamId, onReady, onRename, onSettings, o
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-2 space-y-4">
           <div className="card p-5">
-            <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-slate-400">
-              Seats ({humans.length}/{room.settings.teamCount} filled)
+            <h2 className="mb-1 font-display text-sm font-semibold uppercase tracking-wide text-slate-400">
+              Draft slots ({humans.length}/{room.settings.teamCount} filled)
             </h2>
+            <p className="mb-3 text-xs text-slate-500">
+              Slot number = draft position. First come, first served — switch to any open slot below.
+            </p>
             <ul className="space-y-2">
               {room.teams.map((t) => (
                 <li
@@ -107,13 +111,24 @@ export default function Lobby({ room, myTeamId, onReady, onRename, onSettings, o
                       </span>
                     )}
                   </div>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                      t.ready ? 'bg-accent-500/15 text-accent-400' : 'bg-white/5 text-slate-500'
-                    }`}
-                  >
-                    {t.isBot ? 'Auto-fills' : t.ready ? 'Ready' : 'Not ready'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {t.isBot && t.id !== myTeamId && (
+                      <button
+                        disabled={busy === `switch-${t.id}`}
+                        onClick={() => run(`switch-${t.id}`, () => onSwitchSlot(t.id))}
+                        className="rounded-md border border-accent-500/30 bg-accent-500/10 px-2 py-0.5 text-[11px] font-medium text-accent-300 hover:bg-accent-500/20 disabled:opacity-50"
+                      >
+                        Take slot #{t.slotIndex + 1}
+                      </button>
+                    )}
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        t.ready ? 'bg-accent-500/15 text-accent-400' : 'bg-white/5 text-slate-500'
+                      }`}
+                    >
+                      {t.isBot ? 'Auto-fills' : t.ready ? 'Ready' : 'Not ready'}
+                    </span>
+                  </div>
                 </li>
               ))}
             </ul>

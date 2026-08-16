@@ -107,6 +107,16 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on(
+    'room:switchSlot',
+    (payload: { code: string; teamId: string; authToken: string; targetTeamId: string }, ack: Ack<unknown>) => {
+      safe(ack, () => {
+        const { room, teamId, authToken } = engine.switchSlot(payload.code, payload.teamId, payload.authToken, payload.targetTeamId);
+        return { room: sanitizeRoom(room), teamId, authToken };
+      });
+    },
+  );
+
   socket.on('room:start', (payload: { code: string; teamId: string; authToken: string }, ack: Ack<unknown>) => {
     safe(ack, () => {
       const room = engine.startDraft(payload.code, payload.teamId, payload.authToken);

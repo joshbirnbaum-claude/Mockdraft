@@ -82,6 +82,19 @@ export function useRoom(code: string) {
     [code],
   );
 
+  const switchSlot = useCallback(
+    async (targetTeamId: string) => {
+      const s = seatRef.current;
+      if (!s) throw new Error('Join the room first');
+      const res = await RoomApi.switchSlot(code, s.teamId, s.authToken, targetTeamId);
+      saveSeat(code, { teamId: res.teamId, authToken: res.authToken });
+      setSeat({ teamId: res.teamId, authToken: res.authToken });
+      seatRef.current = { teamId: res.teamId, authToken: res.authToken };
+      setRoom(res.room);
+    },
+    [code],
+  );
+
   const withSeat = useCallback(
     <A extends unknown[], R>(fn: (code: string, teamId: string, authToken: string, ...args: A) => Promise<R>) =>
       async (...args: A) => {
@@ -102,5 +115,5 @@ export function useRoom(code: string) {
   const pick = useCallback((playerId: string) => withSeat(RoomApi.pick)(playerId), [withSeat]);
   const setQueue = useCallback((playerIds: string[]) => withSeat(RoomApi.setQueue)(playerIds), [withSeat]);
 
-  return { room, seat, phase, error, results, join, updateSettings, setReady, rename, start, pick, setQueue, refresh };
+  return { room, seat, phase, error, results, join, switchSlot, updateSettings, setReady, rename, start, pick, setQueue, refresh };
 }

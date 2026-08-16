@@ -59,8 +59,11 @@ export default function JoinGate({ room, onJoin }: Props) {
             </div>
             <div>
               <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-slate-400">
-                Pick a seat (optional)
+                Pick your draft slot (optional)
               </label>
+              <p className="mb-2 -mt-1 text-[11px] text-slate-500">
+                Slot number = draft position, first come first served. You can switch slots later in the lobby.
+              </p>
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                 <button
                   type="button"

@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'node:http';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { Server } from 'socket.io';
 import { ADP_PLAYERS } from './data/adp.js';
 import { DraftEngine, EngineError } from './draft/engine.js';
@@ -16,6 +19,16 @@ app.use(express.json());
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.get('/api/players', (_req, res) => res.json(ADP_PLAYERS));
+
+// If the client has been built (single-service deploy: this process serves
+// both the API/websocket and the static React app), serve it. In local dev
+// the client runs on its own Vite server instead, so this is a no-op then.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const clientDist = path.resolve(__dirname, '../../client/dist');
+if (existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get(/^(?!\/api).*/, (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+}
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: instant-mocks
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: CLIENT_ORIGIN
+        value: "*"

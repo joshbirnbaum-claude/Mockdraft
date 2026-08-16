@@ -1,8 +1,12 @@
 import { io, type Socket } from 'socket.io-client';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:4000';
+// Explicit VITE_SERVER_URL always wins. Otherwise: in dev the client and
+// server run on separate Vite/Node ports, so default to the local server.
+// In a production build (single-service deploy, server serves this bundle
+// itself) default to same-origin so no build-time backend URL is needed.
+const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? (import.meta.env.DEV ? 'http://localhost:4000' : '');
 
-export const socket: Socket = io(SERVER_URL, {
+export const socket: Socket = io(SERVER_URL || undefined, {
   autoConnect: true,
   transports: ['websocket', 'polling'],
 });

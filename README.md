@@ -19,6 +19,21 @@ This starts the server on `:4000` and the client on `:5173` (via `concurrently`)
 
 To point the client at a different server (e.g. a deployed backend), set `VITE_SERVER_URL` (see `client/.env.example`). The server's allowed CORS origin is controlled by `CLIENT_ORIGIN` (defaults to `*`).
 
+## Deploying
+
+The server can serve the built client itself (single service, one URL, no CORS wiring) — `npm run build -w client` produces `client/dist`, and `server/src/index.ts` serves it as static files plus an SPA fallback whenever that folder exists, falling back to API/websocket-only if it doesn't (e.g. local dev, where the client runs on its own Vite server instead).
+
+A `Dockerfile` is included and needs no configuration — it builds the client and runs the server, reading `PORT` from the environment (defaults to `4000`). This works on any container host:
+
+1. **Render** — "New +" → "Blueprint" → connect this repo. `render.yaml` is already set up (free plan, health check on `/api/health`); Render builds the Dockerfile and gives you a public URL in a couple of minutes. (Or "New +" → "Web Service" → pick "Docker" as the environment, no Blueprint needed.)
+2. **Railway** — "New Project" → "Deploy from GitHub repo" → pick this repo. Railway detects the Dockerfile automatically.
+3. **Fly.io** — `fly launch` in this repo (detects the Dockerfile), then `fly deploy`.
+4. **Any other Docker host** (Cloud Run, a VPS, etc.) — `docker build -t instant-mocks . && docker run -p 4000:4000 instant-mocks`.
+
+No environment variables are required to get a working deployment — `CLIENT_ORIGIN` only matters if you split the client and server into two separate services instead of the single-service setup above (in that case, set `CLIENT_ORIGIN` on the server to the client's URL, and `VITE_SERVER_URL` on the client at build time to the server's URL).
+
+Room state is in-memory (see limitations below), so stick to a single instance/replica — no autoscaling or multiple dynos.
+
 ## How a draft works
 
 1. **Create a room** — pick league size, roster construction, draft type (snake/linear, with optional 3rd-round reversal), pick clock, scoring format, and how wild the bots play.

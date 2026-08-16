@@ -2,13 +2,19 @@ import { Fragment, useMemo, useState } from 'react';
 import { POSITION_COLORS } from '../../lib/positions';
 import type { Player, Position } from '../../../../shared/types';
 
+export interface UpcomingPickMarker {
+  /** Picks remaining (from now) until this pick happens. */
+  offset: number;
+  round: number;
+}
+
 interface Props {
   players: Player[];
   canDraft: boolean;
   busyPlayerId: string | null;
   queue: string[];
-  /** Picks remaining until this viewer is next on the clock, or null if not applicable (spectator, already on the clock, etc). */
-  picksUntilMyTurn: number | null;
+  /** This viewer's remaining picks for the rest of the draft, nearest first. Empty if not applicable. */
+  upcomingPicks: UpcomingPickMarker[];
   currentOverallPick: number;
   onDraft: (playerId: string) => void;
   onToggleQueue: (playerId: string) => void;
@@ -21,7 +27,7 @@ export default function PlayerPool({
   canDraft,
   busyPlayerId,
   queue,
-  picksUntilMyTurn,
+  upcomingPicks,
   currentOverallPick,
   onDraft,
   onToggleQueue,
@@ -38,13 +44,17 @@ export default function PlayerPool({
     });
   }, [players, tab, search]);
 
-  // Rough estimate of who'll still be on the board at your next turn: assume the
-  // next `picksUntilMyTurn` picks (across all teams/positions) go roughly by ADP,
-  // so the top N available players right now are the ones likely gone by then.
-  const likelyGoneIds = useMemo(() => {
-    if (!picksUntilMyTurn) return null;
-    return new Set(players.slice(0, picksUntilMyTurn).map((p) => p.id));
-  }, [players, picksUntilMyTurn]);
+  // Rough estimate of who'll still be on the board at each of your future turns:
+  // assume the next N picks (across all teams/positions) go roughly by ADP, so the
+  // top N available players right now (index into the full, unfiltered pool) are
+  // the ones likely gone by then. Position in the FULL list (not the filtered/
+  // searched view) is what determines this, so the markers land correctly no
+  // matter which tab or search is active.
+  const fullIndexById = useMemo(() => {
+    const m = new Map<string, number>();
+    players.forEach((p, i) => m.set(p.id, i));
+    return m;
+  }, [players]);
 
   return (
     <div className="flex h-full flex-col">
@@ -86,26 +96,30 @@ export default function PlayerPool({
           </thead>
           <tbody>
             {(() => {
-              let dividerShown = false;
+              let markerPointer = 0;
               return filtered.map((p) => {
                 const queued = queue.includes(p.id);
-                const showDividerBefore = !!likelyGoneIds && !dividerShown && !likelyGoneIds.has(p.id);
-                if (showDividerBefore) dividerShown = true;
+                const idx = fullIndexById.get(p.id) ?? -1;
+                const markersHere: UpcomingPickMarker[] = [];
+                while (markerPointer < upcomingPicks.length && upcomingPicks[markerPointer].offset <= idx) {
+                  markersHere.push(upcomingPicks[markerPointer]);
+                  markerPointer++;
+                }
                 return (
                   <Fragment key={p.id}>
-                    {showDividerBefore && (
-                      <tr>
+                    {markersHere.map((marker) => (
+                      <tr key={`marker-${marker.round}-${marker.offset}`}>
                         <td colSpan={6} className="px-3 py-1.5">
                           <div className="flex items-center gap-2">
                             <div className="h-px flex-1 bg-accent-400/40" />
                             <span className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide text-accent-400">
-                              Your pick likely lands here (~{picksUntilMyTurn} picks)
+                              Round {marker.round} pick likely lands here (~{marker.offset} picks)
                             </span>
                             <div className="h-px flex-1 bg-accent-400/40" />
                           </div>
                         </td>
                       </tr>
-                    )}
+                    ))}
                     <tr className="border-t border-white/5 hover:bg-white/[0.03]">
                       <td className="px-3 py-2 text-slate-500">{p.adpRank}</td>
                       <td className="px-3 py-2 font-medium text-slate-100">{p.name}</td>

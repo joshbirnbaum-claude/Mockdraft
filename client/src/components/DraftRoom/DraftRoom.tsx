@@ -6,8 +6,9 @@ import PlayerPool from './PlayerPool';
 import RosterPanel from './RosterPanel';
 import QueuePanel from './QueuePanel';
 import PickFeed from './PickFeed';
-import { availablePlayers, currentLocation, nextPickOverallForTeam } from '../../lib/draftMath';
+import { availablePlayers, currentLocation, remainingPicksForTeam } from '../../lib/draftMath';
 import type { Player, RoomState } from '../../../../shared/types';
+import type { UpcomingPickMarker } from './PlayerPool';
 
 interface Props {
   room: RoomState;
@@ -30,11 +31,12 @@ export default function DraftRoom({ room, myTeamId, players, onPick, onSetQueue 
   const loc = currentLocation(room);
   const onClockTeam = loc ? teamsById.get(loc.teamId) : null;
   const isMyTurn = !!myTeamId && loc?.teamId === myTeamId;
-  const nextMyPick = useMemo(
-    () => (myTeamId ? nextPickOverallForTeam(room, myTeamId) : null),
-    [room.status, room.currentOverallPick, room.draftOrderTeamIds, room.settings, myTeamId],
-  );
-  const picksUntilMyTurn = nextMyPick !== null && nextMyPick > room.currentOverallPick ? nextMyPick - room.currentOverallPick : null;
+  const myUpcomingPicks: UpcomingPickMarker[] = useMemo(() => {
+    if (!myTeamId) return [];
+    return remainingPicksForTeam(room, myTeamId)
+      .filter((p) => p.overallPick > room.currentOverallPick)
+      .map((p) => ({ offset: p.overallPick - room.currentOverallPick, round: p.round }));
+  }, [room.status, room.currentOverallPick, room.draftOrderTeamIds, room.settings, myTeamId]);
 
   useEffect(() => {
     setQueue((q) => q.filter((id) => pool.some((p) => p.id === id)));
@@ -108,7 +110,7 @@ export default function DraftRoom({ room, myTeamId, players, onPick, onSetQueue 
             canDraft={isMyTurn}
             busyPlayerId={busyPlayerId}
             queue={queue}
-            picksUntilMyTurn={picksUntilMyTurn}
+            upcomingPicks={myUpcomingPicks}
             currentOverallPick={room.currentOverallPick}
             onDraft={draft}
             onToggleQueue={toggleQueue}

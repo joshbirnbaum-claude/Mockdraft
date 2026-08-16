@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { allPickLocations, nextPickOverallForTeam } from '../../lib/draftMath';
+import { allPickLocations } from '../../lib/draftMath';
 import { POSITION_COLORS } from '../../lib/positions';
 import type { Player, RoomState } from '../../../../shared/types';
 
@@ -16,10 +16,6 @@ export default function DraftBoard({ room, playersById, myTeamId }: Props) {
     const max = Math.max(1, ...locations.map((l) => l.round));
     return Array.from({ length: max }, (_, i) => i + 1);
   }, [locations]);
-  const nextMyPick = useMemo(
-    () => (myTeamId ? nextPickOverallForTeam(room, myTeamId) : null),
-    [room.status, room.currentOverallPick, room.draftOrderTeamIds, room.settings, myTeamId],
-  );
 
   const teamsInOrder = room.draftOrderTeamIds.map((id) => room.teams.find((t) => t.id === id)).filter(Boolean) as RoomState['teams'];
 
@@ -54,19 +50,15 @@ export default function DraftBoard({ room, playersById, myTeamId }: Props) {
                 const pick = picksByOverall.get(loc.overallPick);
                 const player = pick ? playersById.get(pick.playerId) : null;
                 const isCurrent = room.status === 'drafting' && room.currentOverallPick === loc.overallPick;
-                const isMyNextPick = !isCurrent && !player && nextMyPick === loc.overallPick;
-                const picksAway = isMyNextPick ? loc.overallPick - room.currentOverallPick : 0;
                 return (
                   <td key={t.id} className="p-0">
                     <div
                       className={`min-w-[92px] rounded-md border px-1.5 py-1 ${
                         isCurrent
                           ? 'border-accent-400 bg-accent-500/10 pulse-ring'
-                          : isMyNextPick
-                            ? 'border-dashed border-accent-400/60 bg-accent-500/5'
-                            : player
-                              ? 'border-white/10 bg-white/[0.03]'
-                              : 'border-white/5 bg-transparent'
+                          : player
+                            ? 'border-white/10 bg-white/[0.03]'
+                            : 'border-white/5 bg-transparent'
                       }`}
                     >
                       {player ? (
@@ -78,15 +70,9 @@ export default function DraftBoard({ room, playersById, myTeamId }: Props) {
                               {player.position}
                             </span>
                             <span className="text-[9px] text-slate-500">{loc.overallPick}</span>
-                            <span className="ml-auto text-[9px] text-slate-500">ADP {player.adpRank}</span>
                           </div>
                           <div className="truncate text-[11px] font-medium text-slate-200">{player.name}</div>
                         </>
-                      ) : isMyNextPick ? (
-                        <div className="py-1 text-center">
-                          <div className="text-[10px] font-semibold text-accent-300">Your pick</div>
-                          <div className="text-[9px] text-accent-400/70">in {picksAway}</div>
-                        </div>
                       ) : (
                         <div className="py-1.5 text-center text-[10px] text-slate-600">{isCurrent ? 'on clock' : '—'}</div>
                       )}

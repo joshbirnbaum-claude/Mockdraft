@@ -6,7 +6,7 @@ import PlayerPool from './PlayerPool';
 import RosterPanel from './RosterPanel';
 import QueuePanel from './QueuePanel';
 import PickFeed from './PickFeed';
-import { availablePlayers, currentLocation } from '../../lib/draftMath';
+import { availablePlayers, currentLocation, nextPickOverallForTeam } from '../../lib/draftMath';
 import type { Player, RoomState } from '../../../../shared/types';
 
 interface Props {
@@ -30,6 +30,11 @@ export default function DraftRoom({ room, myTeamId, players, onPick, onSetQueue 
   const loc = currentLocation(room);
   const onClockTeam = loc ? teamsById.get(loc.teamId) : null;
   const isMyTurn = !!myTeamId && loc?.teamId === myTeamId;
+  const nextMyPick = useMemo(
+    () => (myTeamId ? nextPickOverallForTeam(room, myTeamId) : null),
+    [room.status, room.currentOverallPick, room.draftOrderTeamIds, room.settings, myTeamId],
+  );
+  const picksUntilMyTurn = nextMyPick !== null && nextMyPick > room.currentOverallPick ? nextMyPick - room.currentOverallPick : null;
 
   useEffect(() => {
     setQueue((q) => q.filter((id) => pool.some((p) => p.id === id)));
@@ -96,6 +101,7 @@ export default function DraftRoom({ room, myTeamId, players, onPick, onSetQueue 
             canDraft={isMyTurn}
             busyPlayerId={busyPlayerId}
             queue={queue}
+            picksUntilMyTurn={picksUntilMyTurn}
             onDraft={draft}
             onToggleQueue={toggleQueue}
           />

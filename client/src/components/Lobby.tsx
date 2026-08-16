@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function Lobby({ room, myTeamId, onReady, onRename, onSwitchSlot, onSettings, onStart }: Props) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'code' | 'link' | null>(null);
   const [nameDraft, setNameDraft] = useState('');
   const [editingName, setEditingName] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -36,25 +36,43 @@ export default function Lobby({ room, myTeamId, onReady, onRename, onSwitchSlot,
     }
   }
 
+  function flashCopied(which: 'code' | 'link') {
+    setCopied(which);
+    setTimeout(() => setCopied(null), 1500);
+  }
+
+  function copyCode() {
+    navigator.clipboard?.writeText(room.code).catch(() => {});
+    flashCopied('code');
+  }
+
   function copyLink() {
     const url = `${window.location.origin}/room/${room.code}`;
     navigator.clipboard?.writeText(url).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    flashCopied('link');
   }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-accent-400">Lobby</p>
-          <h1 className="font-display text-3xl font-bold text-white">Room {room.code}</h1>
+          <p className="text-xs font-medium uppercase tracking-wide text-accent-400">Room code — share this to invite friends</p>
+          <button
+            onClick={copyCode}
+            title="Click to copy room code"
+            className="group flex items-center gap-2 rounded-md -ml-1 px-1 py-0.5 hover:bg-white/5"
+          >
+            <h1 className="font-display text-4xl font-bold tracking-[0.2em] text-white">{room.code}</h1>
+            <span className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[11px] font-medium text-slate-400 opacity-0 transition group-hover:opacity-100">
+              {copied === 'code' ? 'Copied!' : 'Copy'}
+            </span>
+          </button>
         </div>
         <button
           onClick={copyLink}
           className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10"
         >
-          {copied ? 'Link copied!' : 'Copy invite link'}
+          {copied === 'link' ? 'Link copied!' : 'Copy invite link'}
         </button>
       </div>
 

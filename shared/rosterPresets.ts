@@ -6,7 +6,7 @@ export const DEFAULT_SETTINGS: DraftSettings = {
   draftType: 'snake',
   pickTimeSeconds: 60,
   scoring: 'PPR',
-  botVariance: 0.5,
+  botVariance: 0.3,
   thirdRoundReversal: false,
   autoStartWhenReady: true,
 };

@@ -47,7 +47,7 @@ export interface BotPickParams {
   round: number;
   totalRounds: number;
   variance: number; // 0-1, from room settings.botVariance
-  wildness: number; // per-bot personality multiplier, ~0.7-1.3
+  wildness: number; // per-bot personality multiplier, ~0.9-1.1
   rng?: () => number;
 }
 
@@ -76,8 +76,11 @@ export function selectBotPick(params: BotPickParams): Player {
     }
   }
 
-  const baseSigma = 5.5;
-  const sigma = baseSigma * (1 + round * 0.12) * (0.35 + variance) * wildness;
+  // Kept intentionally tight so bots track ADP closely and predictably at every
+  // variance setting - even "wild" (variance=1) should stay recognizably close
+  // to ADP, not produce wholesale reaches/steals.
+  const baseSigma = 1.8;
+  const sigma = baseSigma * (1 + round * 0.04) * (0.12 + variance * 0.35) * wildness;
 
   let best: Player | null = null;
   let bestScore = -Infinity;
@@ -114,5 +117,5 @@ export function selectBotPick(params: BotPickParams): Player {
 }
 
 export function makeWildness(rng: () => number = Math.random): number {
-  return 0.7 + rng() * 0.6;
+  return 0.9 + rng() * 0.2;
 }
